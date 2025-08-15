@@ -33,8 +33,16 @@
   const route = useRoute()
 
   const sourceText = computed({
-    get: () => editor.getSourceText,
-    set: (src) => editor.updateSourceText(src)
+    get: () => {
+      const text = editor.getSourceText;
+      console.log('sourceText computed get called, current text length:', text.length);
+      console.log('sourceText preview:', text.substring(0, 50) + '...');
+      return text;
+    },
+    set: (src) => {
+      console.log('sourceText computed set called with:', src.substring(0, 50) + '...');
+      editor.updateSourceText(src);
+    }
   })
 
   const preferences = computed({
@@ -69,6 +77,20 @@
     if (encodedDbml) {
       console.log('Loading DBML from URL...', encodedDbml.substring(0, 20) + '...')
       editor.loadFromUrlParameter(encodedDbml)
+      
+      // Force update the editor component if it exists
+      nextTick(() => {
+        console.log('=== After nextTick ===')
+        console.log('Store text after load:', editor.getSourceText.length, 'chars')
+        console.log('Computed sourceText:', sourceText.value.length, 'chars')
+        if (editorRef.value) {
+          console.log('Editor component exists, trying to force update')
+          // Try to force the editor to refresh
+          editorRef.value.$forceUpdate?.();
+        } else {
+          console.log('Editor component ref not available')
+        }
+      })
     } else {
       console.log('No DBML parameter found in URL - this is normal for empty editor')
     }
@@ -104,6 +126,14 @@
     console.log('Old values:', oldVal)
     loadFromUrl()
   }, { immediate: false })
+
+  // Watch store changes to detect if the problem is in reactivity
+  watch(() => editor.getSourceText, (newText, oldText) => {
+    console.log('=== Store sourceText changed ===')
+    console.log('Old text length:', oldText?.length || 0)
+    console.log('New text length:', newText?.length || 0)
+    console.log('New text preview:', newText?.substring(0, 50) + '...')
+  }, { immediate: true })
 </script>
 
 <style scoped>
