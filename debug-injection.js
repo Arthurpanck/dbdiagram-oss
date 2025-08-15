@@ -52,61 +52,100 @@ localStorage.removeItem = function(key) {
 };
 
 // Variables globales pour éviter les injections multiples
-window.DBML_FIRST_INJECTION = false;
-window.DBML_SECOND_INJECTION = false;
+window.DBML_FILE_CREATED = false;
 
-// PREMIÈRE INJECTION : VIDER COMPLÈTEMENT puis 1000 lignes vides
-function firstInjection() {
-  if (window.DBML_FIRST_INJECTION) {
-    console.log('⏭️ First injection already done, skipping');
-    return;
-  }
-
-  console.log('🔄 FIRST INJECTION: Clearing everything and loading 1000 empty lines...');
-  const textareas = document.querySelectorAll('textarea');
+// FONCTION CLEAR FILE - Créer un nouveau fichier vierge
+function clearFile() {
+  console.log('📄 CLEAR FILE: Creating brand new empty file...');
   
-  // D'abord VIDER COMPLÈTEMENT
-  textareas.forEach(textarea => {
-    textarea.value = '';
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  // Chercher tous les boutons/liens "New" ou similaires
+  const newButtons = document.querySelectorAll('button, a, [role="button"]');
+  let newFileTriggered = false;
+  
+  newButtons.forEach(button => {
+    const text = button.textContent?.toLowerCase() || '';
+    const title = button.title?.toLowerCase() || '';
+    const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+    
+    if (text.includes('new') || text.includes('nouveau') || 
+        title.includes('new') || title.includes('nouveau') ||
+        ariaLabel.includes('new') || ariaLabel.includes('nouveau') ||
+        text.includes('clear') || text.includes('vider')) {
+      console.log('🔘 Found NEW button:', text || title || ariaLabel);
+      button.click();
+      newFileTriggered = true;
+    }
   });
   
-  // Puis ajouter 1000 lignes vides après un micro-délai
-  setTimeout(() => {
-    const emptyLines = '\n'.repeat(1000);
+  // Si pas de bouton trouvé, forcer la création d'un nouveau fichier
+  if (!newFileTriggered) {
+    console.log('🔧 No NEW button found, forcing file creation...');
+    
+    // Méthode 1: Déclencher les événements clavier pour "Nouveau fichier"
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'n',
+      code: 'KeyN',
+      ctrlKey: true,
+      bubbles: true
+    }));
+    
+    // Méthode 2: Forcer le reset de l'état de l'application
+    const textareas = document.querySelectorAll('textarea');
     textareas.forEach(textarea => {
+      // Simuler un nouveau fichier avec 1000 lignes vides
+      const emptyLines = '\n'.repeat(1000);
       textarea.value = emptyLines;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      
+      // Déclencher tous les événements possibles
+      ['input', 'change', 'focus', 'blur'].forEach(eventType => {
+        textarea.dispatchEvent(new Event(eventType, { bubbles: true }));
+      });
     });
-    console.log('✅ First injection complete - everything cleared then 1000 empty lines loaded');
-  }, 100);
+    
+    console.log('✅ Forced new file creation with 1000 empty lines');
+  }
   
-  window.DBML_FIRST_INJECTION = true;
-  
-  // Lancer la seconde injection après un délai
-  setTimeout(secondInjection, 1500);
+  return true;
 }
 
-// SECONDE INJECTION : Paramètres URL ou nettoyage final
-function secondInjection() {
-  if (window.DBML_SECOND_INJECTION) {
-    console.log('⏭️ Second injection already done, skipping');
+// PREMIÈRE INJECTION : Créer un nouveau fichier
+function firstInjection() {
+  if (window.DBML_FILE_CREATED) {
+    console.log('⏭️ File already created, skipping');
     return;
   }
 
+  console.log('🔄 FIRST INJECTION: Creating new file...');
+  
+  // Créer un nouveau fichier
+  const fileCreated = clearFile();
+  
+  if (fileCreated) {
+    console.log('✅ First injection complete - new file created');
+    window.DBML_FILE_CREATED = true;
+    
+    // Lancer la seconde injection après un délai
+    setTimeout(secondInjection, 1500);
+  } else {
+    console.log('❌ Failed to create new file, retrying...');
+    setTimeout(firstInjection, 500);
+  }
+}
+
+// SECONDE INJECTION : Remplacer le contenu par les paramètres URL
+function secondInjection() {
   console.log('🔄 SECOND INJECTION: Processing URL parameters...');
   const hash = window.location.hash;
   const textareas = document.querySelectorAll('textarea');
 
-  // Si pas de paramètre, vider complètement
+  // Si pas de paramètre, garder le fichier vide
   if (!hash.includes('/editor/')) {
-    console.log('No URL parameter - clearing to empty editor');
+    console.log('No URL parameter - keeping new empty file');
     textareas.forEach(textarea => {
       textarea.value = '';
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    console.log('✅ Second injection complete - editor cleared');
-    window.DBML_SECOND_INJECTION = true;
+    console.log('✅ Second injection complete - empty file maintained');
     return;
   }
 
@@ -122,14 +161,12 @@ function secondInjection() {
         if (padLength > 0) base64 += '='.repeat(padLength);
         const dbmlText = atob(base64);
         
-        // Injecter le contenu DBML
+        // Remplacer le contenu du nouveau fichier
         if (textareas.length > 0) {
           textareas[0].value = dbmlText;
           textareas[0].dispatchEvent(new Event('input', { bubbles: true }));
-          console.log('✅ Second injection complete - DBML content loaded');
+          console.log('✅ Second injection complete - DBML content loaded in new file');
         }
-        
-        window.DBML_SECOND_INJECTION = true;
       } catch (e) {
         console.error('❌ Failed to decode/inject:', e);
       }
