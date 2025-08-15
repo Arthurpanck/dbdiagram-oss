@@ -32,3 +32,31 @@ export const list = () => {
   }
   return items;
 };
+
+export const encodeDbmlForUrl = (dbmlText) => {
+  try {
+    return btoa(dbmlText)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  } catch (e) {
+    console.error('Failed to encode DBML for URL:', e);
+    return '';
+  }
+};
+
+export const decodeDbmlFromUrl = (encodedDbml) => {
+  try {
+    const base64 = encodedDbml
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    const padding = 4 - (base64.length % 4);
+    const paddedBase64 = padding !== 4 ? base64 + '='.repeat(padding) : base64;
+    
+    return atob(paddedBase64);
+  } catch (e) {
+    console.error('Failed to decode DBML from URL:', e);
+    return '';
+  }
+};

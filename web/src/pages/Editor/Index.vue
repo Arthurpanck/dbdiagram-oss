@@ -25,10 +25,12 @@
   import DbmlGraph from 'components/DbmlGraph'
   import { useEditorStore } from 'src/store/editor'
   import { debounce, throttle, useQuasar } from 'quasar'
+  import { useRoute } from 'vue-router'
 
   const editorRef = ref(null)
   const editor = useEditorStore()
   const q = useQuasar()
+  const route = useRoute()
 
   const sourceText = computed({
     get: () => editor.getSourceText,
@@ -45,6 +47,13 @@
   })
 
   const schema = computed(() => editor.getDatabase?.schemas?.find(x => true))
+
+  onMounted(() => {
+    const encodedDbml = route.params.encodedDbml
+    if (encodedDbml) {
+      editor.loadFromUrlParameter(encodedDbml)
+    }
+  })
 </script>
 
 <style scoped>

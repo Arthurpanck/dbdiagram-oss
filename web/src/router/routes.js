@@ -9,7 +9,7 @@ const routes = [
         //component: () => import("pages/Index.vue")
       },
       {
-        path: "editor",
+        path: "editor/:encodedDbml?",
         components: {
           default: () => import("pages/Editor/Index.vue"),
           toolbar: () => import("pages/Editor/Toolbar.vue")

@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { Parser } from "@dbml/core";
 import { throttle } from "quasar";
 import { useChartStore } from "./chart";
+import { encodeDbmlForUrl, decodeDbmlFromUrl } from "../utils/storageUtils";
 
 
 export const useEditorStore = defineStore("editor", {
@@ -99,6 +100,10 @@ export const useEditorStore = defineStore("editor", {
         source: state.source,
         preferences: state.preferences
       }
+    },
+    getShareableUrl(state) {
+      const encodedDbml = encodeDbmlForUrl(state.source.text);
+      return `${window.location.origin}${window.location.pathname}#/editor/${encodedDbml}`;
     }
   },
   actions: {
@@ -220,6 +225,19 @@ export const useEditorStore = defineStore("editor", {
         this.$patch({
           parserError: undefined
         });
+      }
+    },
+    loadFromUrlParameter(encodedDbml) {
+      if (!encodedDbml) return;
+      
+      try {
+        const dbmlText = decodeDbmlFromUrl(encodedDbml);
+        if (dbmlText) {
+          this.updateSourceText(dbmlText);
+          this.updateDatabase();
+        }
+      } catch (e) {
+        console.error('Failed to load DBML from URL parameter:', e);
       }
     }
   }

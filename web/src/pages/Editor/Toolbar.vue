@@ -123,6 +123,17 @@
     padding="sm"
     size="md"
     class="bg-secondary q-mx-xs"
+    @click="shareUrl"
+  >
+    <q-icon
+      size="xs"
+      name="share"
+    />
+  </q-btn>
+  <q-btn
+    padding="sm"
+    size="md"
+    class="bg-secondary q-mx-xs"
     @click="showPreferencesDialog"
   >
     <q-icon
@@ -225,6 +236,30 @@
   const showPreferencesDialog = () => {
     $q.dialog({
       component: PreferencesDialog
+    })
+  }
+
+  const shareUrl = () => {
+    const shareableUrl = editor.getShareableUrl
+    
+    navigator.clipboard.writeText(shareableUrl).then(() => {
+      $q.notify({
+        message: 'Shareable URL copied to clipboard!',
+        type: 'positive',
+        position: 'top',
+        timeout: 2000
+      })
+    }).catch(() => {
+      $q.dialog({
+        title: 'Share URL',
+        message: 'Copy this URL to share your diagram:',
+        prompt: {
+          model: shareableUrl,
+          type: 'text'
+        },
+        cancel: false,
+        persistent: false
+      })
     })
   }
 
