@@ -228,18 +228,26 @@ export const useEditorStore = defineStore("editor", {
       }
     },
     loadFromUrlParameter(encodedDbml) {
-      if (!encodedDbml) return;
+      if (!encodedDbml) {
+        console.log('No encoded DBML parameter found');
+        return;
+      }
       
-      console.log('Loading DBML from URL parameter:', encodedDbml.substring(0, 20) + '...');
+      console.log('Loading DBML from URL parameter:', encodedDbml.substring(0, 20) + '...', 'Length:', encodedDbml.length);
       
       try {
         const dbmlText = decodeDbmlFromUrl(encodedDbml);
-        if (dbmlText) {
-          console.log('Decoded DBML:', dbmlText.substring(0, 50) + '...');
+        console.log('Decode result:', dbmlText ? 'Success' : 'Empty', 'Length:', dbmlText?.length);
+        
+        if (dbmlText && dbmlText.trim()) {
+          console.log('Decoded DBML:', dbmlText.substring(0, 100) + '...');
+          console.log('Setting source text...');
           this.updateSourceText(dbmlText);
+          console.log('Updating database...');
           this.updateDatabase();
+          console.log('URL parameter loading complete');
         } else {
-          console.warn('Decoded DBML is empty');
+          console.warn('Decoded DBML is empty or whitespace only');
         }
       } catch (e) {
         console.error('Failed to load DBML from URL parameter:', e);
