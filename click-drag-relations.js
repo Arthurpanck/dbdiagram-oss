@@ -205,18 +205,24 @@ function handleElementMouseDown(e, element) {
 function isTableColumn(element) {
   if (!element) return false;
   
-  // EXCLURE: Tout élément avec la classe db-table-header
+  // EXCLURE: Éléments avec ID table-X ou classe db-table
+  const tableIdPattern = /^table-\d+$/;
+  if (id && tableIdPattern.test(id)) {
+    console.log('❌ Excluding table container with ID:', id);
+    return false;
+  }
+  
   try {
-    if (element.classList?.contains('db-table-header')) {
-      console.log('❌ Excluding element with db-table-header class');
+    if (element.classList?.contains('db-table')) {
+      console.log('❌ Excluding element with db-table class');
       return false;
     }
   } catch (e) {
     // Fallback pour SVG
     const classStr = typeof element.className === 'string' ? element.className : 
                      element.className?.baseVal || '';
-    if (classStr.includes('db-table-header')) {
-      console.log('❌ Excluding SVG element with db-table-header class');
+    if (classStr.includes('db-table')) {
+      console.log('❌ Excluding SVG element with db-table class');
       return false;
     }
   }
