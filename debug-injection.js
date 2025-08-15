@@ -54,98 +54,93 @@ localStorage.removeItem = function(key) {
 // Variables globales pour éviter les injections multiples
 window.DBML_FILE_CREATED = false;
 
-// FONCTION CLEAR FILE - Créer un nouveau fichier vierge
-function clearFile() {
-  console.log('📄 CLEAR FILE: Creating brand new empty file...');
+// FONCTION CLEAR ACE EDITOR - Vider complètement ACE Editor
+function clearAceEditor() {
+  console.log('🎯 CLEARING ACE EDITOR: Removing all .ace_line elements...');
   
-  // Chercher tous les boutons/liens "New" ou similaires
-  const newButtons = document.querySelectorAll('button, a, [role="button"]');
-  let newFileTriggered = false;
+  // Méthode 1: Supprimer toutes les lignes ACE
+  const aceLines = document.querySelectorAll('.ace_line');
+  console.log(`Found ${aceLines.length} ace_line elements`);
   
-  newButtons.forEach(button => {
-    const text = button.textContent?.toLowerCase() || '';
-    const title = button.title?.toLowerCase() || '';
-    const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
-    
-    if (text.includes('new') || text.includes('nouveau') || 
-        title.includes('new') || title.includes('nouveau') ||
-        ariaLabel.includes('new') || ariaLabel.includes('nouveau') ||
-        text.includes('clear') || text.includes('vider')) {
-      console.log('🔘 Found NEW button:', text || title || ariaLabel);
-      button.click();
-      newFileTriggered = true;
-    }
+  aceLines.forEach((line, index) => {
+    line.remove();
+    if (index < 5) console.log(`Removed ace_line ${index}:`, line.textContent?.substring(0, 50));
   });
   
-  // Si pas de bouton trouvé, forcer la création d'un nouveau fichier
-  if (!newFileTriggered) {
-    console.log('🔧 No NEW button found, forcing file creation...');
-    
-    // Méthode 1: Déclencher les événements clavier pour "Nouveau fichier"
-    document.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'n',
-      code: 'KeyN',
-      ctrlKey: true,
-      bubbles: true
-    }));
-    
-    // Méthode 2: Forcer le reset de l'état de l'application
-    const textareas = document.querySelectorAll('textarea');
-    textareas.forEach(textarea => {
-      // Simuler un nouveau fichier avec 1000 lignes vides
-      const emptyLines = '\n'.repeat(1000);
-      textarea.value = emptyLines;
-      
-      // Déclencher tous les événements possibles
-      ['input', 'change', 'focus', 'blur'].forEach(eventType => {
-        textarea.dispatchEvent(new Event(eventType, { bubbles: true }));
-      });
-    });
-    
-    console.log('✅ Forced new file creation with 1000 empty lines');
+  // Méthode 2: Vider le contenu ACE
+  const aceContent = document.querySelector('.ace_content');
+  if (aceContent) {
+    console.log('Found .ace_content, clearing innerHTML');
+    aceContent.innerHTML = '';
   }
   
+  // Méthode 3: Vider le scroller ACE 
+  const aceScroller = document.querySelector('.ace_scroller');
+  if (aceScroller) {
+    console.log('Found .ace_scroller, clearing innerHTML');
+    aceScroller.innerHTML = '';
+  }
+  
+  // Méthode 4: Si ACE Editor API est disponible
+  if (window.ace) {
+    console.log('ACE API found, trying to clear editor');
+    const aceEditorElement = document.querySelector('.ace_editor');
+    if (aceEditorElement) {
+      try {
+        const editor = window.ace.edit(aceEditorElement);
+        editor.setValue('', -1);
+        editor.clearSelection();
+        console.log('✅ ACE Editor cleared via API');
+      } catch (e) {
+        console.log('⚠️ ACE API clear failed:', e);
+      }
+    }
+  }
+  
+  // Méthode 5: Vider aussi les textareas au cas où
+  const textareas = document.querySelectorAll('textarea');
+  textareas.forEach(textarea => {
+    textarea.value = '';
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  
+  console.log('✅ ACE Editor clearing complete');
   return true;
 }
 
-// PREMIÈRE INJECTION : Créer un nouveau fichier
+// PREMIÈRE INJECTION : Vider complètement ACE Editor
 function firstInjection() {
   if (window.DBML_FILE_CREATED) {
-    console.log('⏭️ File already created, skipping');
+    console.log('⏭️ ACE Editor already cleared, skipping');
     return;
   }
 
-  console.log('🔄 FIRST INJECTION: Creating new file...');
+  console.log('🔄 FIRST INJECTION: Clearing ACE Editor...');
   
-  // Créer un nouveau fichier
-  const fileCreated = clearFile();
+  // Vider ACE Editor
+  const aceCleared = clearAceEditor();
   
-  if (fileCreated) {
-    console.log('✅ First injection complete - new file created');
+  if (aceCleared) {
+    console.log('✅ First injection complete - ACE Editor cleared');
     window.DBML_FILE_CREATED = true;
     
     // Lancer la seconde injection après un délai
-    setTimeout(secondInjection, 1500);
+    setTimeout(secondInjection, 1000);
   } else {
-    console.log('❌ Failed to create new file, retrying...');
+    console.log('❌ Failed to clear ACE Editor, retrying...');
     setTimeout(firstInjection, 500);
   }
 }
 
-// SECONDE INJECTION : Remplacer le contenu par les paramètres URL
+// SECONDE INJECTION : Charger le contenu dans ACE Editor
 function secondInjection() {
-  console.log('🔄 SECOND INJECTION: Processing URL parameters...');
+  console.log('🔄 SECOND INJECTION: Processing URL parameters for ACE Editor...');
   const hash = window.location.hash;
-  const textareas = document.querySelectorAll('textarea');
 
-  // Si pas de paramètre, garder le fichier vide
+  // Si pas de paramètre, garder l'éditeur vide
   if (!hash.includes('/editor/')) {
-    console.log('No URL parameter - keeping new empty file');
-    textareas.forEach(textarea => {
-      textarea.value = '';
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    console.log('✅ Second injection complete - empty file maintained');
+    console.log('No URL parameter - keeping ACE Editor empty');
+    console.log('✅ Second injection complete - ACE Editor stays empty');
     return;
   }
 
@@ -161,12 +156,31 @@ function secondInjection() {
         if (padLength > 0) base64 += '='.repeat(padLength);
         const dbmlText = atob(base64);
         
-        // Remplacer le contenu du nouveau fichier
-        if (textareas.length > 0) {
-          textareas[0].value = dbmlText;
-          textareas[0].dispatchEvent(new Event('input', { bubbles: true }));
-          console.log('✅ Second injection complete - DBML content loaded in new file');
+        console.log('Injecting DBML into ACE Editor:', dbmlText.substring(0, 50) + '...');
+        
+        // Méthode 1: Via ACE API
+        if (window.ace) {
+          const aceEditorElement = document.querySelector('.ace_editor');
+          if (aceEditorElement) {
+            try {
+              const editor = window.ace.edit(aceEditorElement);
+              editor.setValue(dbmlText, -1);
+              editor.clearSelection();
+              console.log('✅ DBML injected via ACE API');
+            } catch (e) {
+              console.log('⚠️ ACE API injection failed:', e);
+            }
+          }
         }
+        
+        // Méthode 2: Via textarea aussi
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach(textarea => {
+          textarea.value = dbmlText;
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        
+        console.log('✅ Second injection complete - DBML loaded in ACE Editor');
       } catch (e) {
         console.error('❌ Failed to decode/inject:', e);
       }
