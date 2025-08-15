@@ -25,16 +25,6 @@ try {
   console.log('⚠️ sessionStorage clear failed:', e);
 }
 
-// Vider le cache si possible
-if ('caches' in window) {
-  caches.keys().then(function(names) {
-    names.forEach(function(name) {
-      caches.delete(name);
-      console.log('🗑️ Cache deleted:', name);
-    });
-  });
-}
-
 // BLOQUER localStorage définitivement pour TOUTES les clés
 localStorage.setItem = function(key, value) {
   console.log('🚫 BLOCKED localStorage.setItem for:', key);
@@ -54,84 +44,56 @@ localStorage.removeItem = function(key) {
 // Variable globale pour éviter les injections multiples
 window.DBML_INJECTED = false;
 
-// FONCTION SIMPLE - Une seule injection avec ACE API clearing
+// Fonction simple et propre - EXACTEMENT comme dans 0a4b7dce
 function handleUrlParameter() {
   if (window.DBML_INJECTED) {
     console.log('⏭️ Already processed, skipping');
     return;
   }
 
-  console.log('🔄 SINGLE INJECTION: Processing URL parameters...');
+  console.log('🔍 Checking URL for parameters...');
   const hash = window.location.hash;
-
-  // ÉTAPE 1: ACE Editor clearing (ce qui fonctionne)
-  const aceEditorElement = document.querySelector('.ace_editor');
-  if (window.ace && aceEditorElement) {
-    console.log('ACE API found, clearing editor');
-    try {
-      const editor = window.ace.edit(aceEditorElement);
-      editor.setValue('', -1);
-      editor.clearSelection();
-      console.log('✅ ACE Editor cleared via API');
-    } catch (e) {
-      console.log('⚠️ ACE API clear failed:', e);
-    }
-  }
-
-  // ÉTAPE 2: Vider aussi les textareas
+  
+  // Nettoyer l'éditeur d'abord
   const textareas = document.querySelectorAll('textarea');
   textareas.forEach(textarea => {
     textarea.value = '';
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
-  // ÉTAPE 3: Si paramètre URL, charger le contenu
-  if (hash.includes('/editor/')) {
-    const parts = hash.split('/editor/');
-    if (parts.length > 1) {
-      const encodedDbml = parts[1].split('?')[0];
-      if (encodedDbml && encodedDbml.length > 0) {
-        try {
-          // Décoder
-          let base64 = encodedDbml.replace(/-/g, '+').replace(/_/g, '/');
-          const padLength = (4 - (base64.length % 4)) % 4;
-          if (padLength > 0) base64 += '='.repeat(padLength);
-          const dbmlText = atob(base64);
-          
-          console.log('Injecting DBML into ACE Editor:', dbmlText.substring(0, 50) + '...');
-          
-          // Méthode 1: Via ACE API (comme dans le commit qui fonctionnait)
-          if (window.ace) {
-            const aceEditorElement2 = document.querySelector('.ace_editor');
-            if (aceEditorElement2) {
-              try {
-                const editor = window.ace.edit(aceEditorElement2);
-                editor.setValue(dbmlText, -1);
-                editor.clearSelection();
-                console.log('✅ DBML injected via ACE API');
-              } catch (e) {
-                console.log('⚠️ ACE API injection failed:', e);
-              }
-            }
-          }
-          
-          // Méthode 2: Via textarea aussi
-          textareas.forEach(textarea => {
-            textarea.value = dbmlText;
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-          });
-          
-          console.log('✅ DBML loaded in ACE Editor');
-        } catch (e) {
-          console.error('❌ Failed to decode/inject:', e);
+  // Si pas de paramètre, on s'arrête là
+  if (!hash.includes('/editor/')) {
+    console.log('✅ No URL parameter - editor stays empty');
+    window.DBML_INJECTED = true;
+    return;
+  }
+
+  // Extraire et décoder le paramètre
+  const parts = hash.split('/editor/');
+  if (parts.length > 1) {
+    const encodedDbml = parts[1].split('?')[0];
+    if (encodedDbml && encodedDbml.length > 0) {
+      try {
+        // Décoder
+        let base64 = encodedDbml.replace(/-/g, '+').replace(/_/g, '/');
+        const padLength = (4 - (base64.length % 4)) % 4;
+        if (padLength > 0) base64 += '='.repeat(padLength);
+        const dbmlText = atob(base64);
+        
+        // Injecter UNE SEULE FOIS - EXACTEMENT comme avant
+        if (textareas.length > 0) {
+          textareas[0].value = dbmlText;
+          textareas[0].dispatchEvent(new Event('input', { bubbles: true }));
+          console.log('✅ DBML injected successfully');
         }
+        
+        window.DBML_INJECTED = true;
+      } catch (e) {
+        console.error('❌ Failed to decode/inject:', e);
       }
     }
   }
-
-  console.log('✅ Single injection complete');
-  window.DBML_INJECTED = true;
 }
 
-// Lancer une seule fois
+// Lancer une seule fois quand l'app est prête
 setTimeout(handleUrlParameter, 2000);
