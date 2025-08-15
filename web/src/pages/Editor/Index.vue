@@ -53,11 +53,13 @@
     console.log('=== loadFromUrl called ===')
     console.log('Route params:', route.params)
     console.log('Route query:', route.query)
+    console.log('Route path:', route.path)
+    console.log('Route fullPath:', route.fullPath)
     
-    // Check for route params first (existing behavior)
+    // Check for route params first (primary method - existing behavior)
     let encodedDbml = route.params.encodedDbml
     
-    // If no route params, check query parameters
+    // Fallback: If no route params, check query parameters (for compatibility)
     if (!encodedDbml) {
       encodedDbml = route.query.editor
     }
@@ -68,7 +70,7 @@
       console.log('Loading DBML from URL...', encodedDbml.substring(0, 20) + '...')
       editor.loadFromUrlParameter(encodedDbml)
     } else {
-      console.log('No DBML parameter found in URL')
+      console.log('No DBML parameter found in URL - this is normal for empty editor')
     }
   }
 

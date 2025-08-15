@@ -103,9 +103,9 @@ export const useEditorStore = defineStore("editor", {
     },
     getShareableUrl(state) {
       const encodedDbml = encodeDbmlForUrl(state.source.text);
-      // Support both route params and query params
+      // Use route param format as expected by the router
       const baseUrl = `${window.location.origin}${window.location.pathname}`;
-      return `${baseUrl}#/editor?editor=${encodedDbml}`;
+      return `${baseUrl}#/editor/${encodedDbml}`;
     }
   },
   actions: {
