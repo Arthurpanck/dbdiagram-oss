@@ -50,9 +50,23 @@ function analyzeDOMStructure() {
     const elementTypes = {};
     children.forEach(el => {
       const tag = el.tagName.toLowerCase();
-      const classes = el.className || '';
-      // Fix: vérifier que className est une string avant split
-      const classStr = typeof classes === 'string' ? classes : '';
+      
+      // Fix: Gérer className pour SVG et HTML
+      let classStr = '';
+      try {
+        if (el.className) {
+          if (typeof el.className === 'string') {
+            classStr = el.className;
+          } else if (el.className.baseVal) {
+            classStr = el.className.baseVal;
+          } else if (el.classList) {
+            classStr = Array.from(el.classList).join(' ');
+          }
+        }
+      } catch (e) {
+        classStr = '';
+      }
+      
       const key = `${tag}${classStr ? '.' + classStr.split(' ').slice(0, 2).join('.') : ''}`;
       elementTypes[key] = (elementTypes[key] || 0) + 1;
     });
@@ -152,23 +166,42 @@ function isTableColumn(element) {
   if (!element) return false;
   
   const text = element.textContent?.trim() || '';
-  const className = element.className || '';
-  const classStr = typeof className === 'string' ? className : '';
   const tagName = element.tagName.toLowerCase();
+  const id = element.id || '';
+  
+  // Nouveau: Détecter spécifiquement les éléments SVG de tables
+  const isSVGField = id.startsWith('field-') || element.closest('[id^="field-"]');
+  const isInTable = element.closest('[id^="table-"]') || element.closest('.db-table-field');
+  const hasDbTableClass = element.classList?.contains('db-table-field') || 
+                          element.closest('g')?.classList?.contains('db-table-field');
   
   // Critères pour identifier une colonne
   const hasTableText = text.length > 0 && text.length < 100;
-  const hasTableClass = classStr.includes('column') || classStr.includes('field') || classStr.includes('cell');
-  const isTextElement = tagName === 'text' || tagName === 'span' || tagName === 'div';
+  const isTextElement = tagName === 'text' || tagName === 'span' || tagName === 'div' || tagName === 'g';
   const isInDiagram = element.closest('.db-graph-view, .joint-paper, .diagram-container');
   
-  return (hasTableText && (hasTableClass || isTextElement)) && isInDiagram;
+  return (hasTableText && (isSVGField || hasDbTableClass || isInTable || isTextElement)) && isInDiagram;
 }
 
 // Fonction pour obtenir des infos sur un élément
 function getElementInfo(element) {
-  const className = element.className || '';
-  const classStr = typeof className === 'string' ? className : '';
+  // Fix: Gérer className pour les éléments SVG
+  let classStr = '';
+  try {
+    if (element.className) {
+      if (typeof element.className === 'string') {
+        classStr = element.className;
+      } else if (element.className.baseVal) {
+        // SVG className est un objet avec baseVal
+        classStr = element.className.baseVal;
+      } else if (element.classList) {
+        classStr = Array.from(element.classList).join(' ');
+      }
+    }
+  } catch (e) {
+    // Fallback si problème avec className
+    classStr = '';
+  }
   
   return {
     tag: element.tagName,
@@ -212,16 +245,26 @@ function createRelation(sourceElement, targetElement) {
 function extractTableColumnInfo(element) {
   const text = element.textContent?.trim() || '';
   
-  // Méthode 1: Chercher dans les éléments parents pour le nom de table
+  // Méthode 1: Chercher dans les IDs et structure SVG
   let tableElement = element;
   let tableName = null;
   
-  // Remonter dans le DOM pour trouver la table
+  // Remonter dans le DOM pour trouver la table (structure SVG spécifique)
   for (let i = 0; i < 10; i++) {
     tableElement = tableElement.parentElement;
     if (!tableElement) break;
     
-    // Chercher les éléments qui contiennent le nom de table
+    // Chercher par ID table-X
+    if (tableElement.id?.startsWith('table-')) {
+      // Chercher le header de la table
+      const headerElement = tableElement.querySelector('.db-table-header text, g.db-table-header text');
+      if (headerElement) {
+        tableName = headerElement.textContent?.trim();
+        break;
+      }
+    }
+    
+    // Fallback: chercher les éléments titre
     const titleElement = tableElement.querySelector('text[font-weight="bold"], .table-title, .table-name');
     if (titleElement) {
       tableName = titleElement.textContent?.trim();
@@ -229,14 +272,25 @@ function extractTableColumnInfo(element) {
     }
   }
   
-  // Méthode 2: Pattern matching sur le texte
+  // Méthode 2: Extraire depuis les IDs field-X
+  if (!tableName && element.id?.startsWith('field-')) {
+    // Si c'est un field, chercher la table parente
+    const tableParent = element.closest('[id^="table-"]');
+    if (tableParent) {
+      const headerElement = tableParent.querySelector('.db-table-header text, g.db-table-header text');
+      if (headerElement) {
+        tableName = headerElement.textContent?.trim();
+      }
+    }
+  }
+  
+  // Méthode 3: Pattern par défaut si pas trouvé
   if (!tableName) {
-    // Si pas trouvé, utiliser un pattern par défaut
     tableName = `table_${Math.random().toString(36).substr(2, 5)}`;
   }
   
   return {
-    table: tableName,
+    table: tableName.replace(/[^a-zA-Z0-9_]/g, '_') || 'table',
     column: text.replace(/[^a-zA-Z0-9_]/g, '_') || 'column'
   };
 }
