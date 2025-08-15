@@ -65,18 +65,16 @@ function handleUrlParameter() {
   const hash = window.location.hash;
 
   // ÉTAPE 1: ACE Editor clearing (ce qui fonctionne)
-  if (window.ace) {
+  const aceEditorElement = document.querySelector('.ace_editor');
+  if (window.ace && aceEditorElement) {
     console.log('ACE API found, clearing editor');
-    const aceEditorElement = document.querySelector('.ace_editor');
-    if (aceEditorElement) {
-      try {
-        const editor = window.ace.edit(aceEditorElement);
-        editor.setValue('', -1);
-        editor.clearSelection();
-        console.log('✅ ACE Editor cleared via API');
-      } catch (e) {
-        console.log('⚠️ ACE API clear failed:', e);
-      }
+    try {
+      const editor = window.ace.edit(aceEditorElement);
+      editor.setValue('', -1);
+      editor.clearSelection();
+      console.log('✅ ACE Editor cleared via API');
+    } catch (e) {
+      console.log('⚠️ ACE API clear failed:', e);
     }
   }
 
@@ -114,7 +112,7 @@ function handleUrlParameter() {
             }
           }
           
-          // Via textarea
+          // Via textarea aussi
           textareas.forEach(textarea => {
             textarea.value = dbmlText;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
