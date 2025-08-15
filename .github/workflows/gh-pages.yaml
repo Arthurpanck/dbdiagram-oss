@@ -16,21 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v4
-        - uses: actions/setup-node@v4
-          with:
-            node-version: '18'
-            cache: 'yarn'
-            cache-dependency-path: '**/yarn.lock'
-
-        - name: Install packages
-          working-directory: web
-          shell: bash
-          run: yarn install --frozen-lockfile
-
-        - name: Build Vue app
-          working-directory: web
-          shell: bash
-          run: yarn build
 
         - name: Setup Pages
           uses: actions/configure-pages@v4
