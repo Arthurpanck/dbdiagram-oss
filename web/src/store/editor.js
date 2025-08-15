@@ -141,18 +141,41 @@ export const useEditorStore = defineStore("editor", {
       this.clearParserError();
     },
     updateDatabase() {
-      console.log("updating database...");
+      console.log("=== updating database ===");
+      console.log("Source text length:", this.source.text.length);
+      console.log("Source text preview:", this.source.text.substring(0, 200) + '...');
+      console.log("Source format:", this.source.format);
+      
       try {
+        if (!this.source.text || this.source.text.trim() === '') {
+          console.log("Empty source text, clearing database");
+          this.clearDatabase();
+          return;
+        }
+        
+        console.log("Parsing DBML...");
         const database = Parser.parse(this.source.text, this.source.format);
+        console.log("Parse successful, normalizing...");
         database.normalize();
+        console.log("Normalization successful");
+        
         this.database = database;
         this.clearParserError();
-        console.log("updated database");
+        console.log("Database updated successfully. Schema count:", database.schemas?.length || 0);
+        
+        if (database.schemas?.[0]?.tables) {
+          console.log("Tables found:", database.schemas[0].tables.length);
+        }
+        
         const chart = useChartStore();
         chart.loadDatabase(database);
+        console.log("Chart store updated");
       } catch (e) {
-        // do nothing
-        console.error(e);
+        console.error("=== Database update error ===");
+        console.error("Error type:", e.constructor.name);
+        console.error("Error message:", e.message);
+        console.error("Error stack:", e.stack);
+        console.error("Source that caused error:", this.source.text);
         this.updateParserError(e);
       }
     },
