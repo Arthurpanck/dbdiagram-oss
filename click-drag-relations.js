@@ -209,13 +209,6 @@ function isTableColumn(element) {
   const tagName = element.tagName.toLowerCase();
   const id = element.id || '';
   
-  // EXCLURE: Les éléments db-table-header (pour déplacer les tables)
-  const isInHeader = element.closest('.db-table-header, g.db-table-header');
-  if (isInHeader) {
-    console.log('❌ Ignoring table header element (used for moving tables)');
-    return false;
-  }
-  
   // NOUVEAU: Détecter spécifiquement les éléments SVG de tables
   const isSVGField = id.startsWith('field-') || element.closest('[id^="field-"]');
   const isInTable = element.closest('[id^="table-"]') || element.closest('.db-table-field');
