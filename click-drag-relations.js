@@ -205,6 +205,22 @@ function handleElementMouseDown(e, element) {
 function isTableColumn(element) {
   if (!element) return false;
   
+  // EXCLURE: Tout élément avec la classe db-table-header
+  try {
+    if (element.classList?.contains('db-table-header')) {
+      console.log('❌ Excluding element with db-table-header class');
+      return false;
+    }
+  } catch (e) {
+    // Fallback pour SVG
+    const classStr = typeof element.className === 'string' ? element.className : 
+                     element.className?.baseVal || '';
+    if (classStr.includes('db-table-header')) {
+      console.log('❌ Excluding SVG element with db-table-header class');
+      return false;
+    }
+  }
+  
   const text = element.textContent?.trim() || '';
   const tagName = element.tagName.toLowerCase();
   const id = element.id || '';
