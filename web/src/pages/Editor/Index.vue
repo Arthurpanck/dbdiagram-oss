@@ -48,15 +48,33 @@
 
   const schema = computed(() => editor.getDatabase?.schemas?.find(x => true))
 
-  onMounted(() => {
-    const encodedDbml = route.params.encodedDbml
-    if (encodedDbml) {
-      // Use nextTick to ensure stores are fully initialized
-      nextTick(() => {
-        editor.loadFromUrlParameter(encodedDbml)
-      })
+  // Function to load DBML from URL parameters
+  const loadFromUrl = () => {
+    // Check for route params first (existing behavior)
+    let encodedDbml = route.params.encodedDbml
+    
+    // If no route params, check query parameters
+    if (!encodedDbml) {
+      encodedDbml = route.query.editor
     }
+    
+    if (encodedDbml) {
+      console.log('Loading DBML from URL...', encodedDbml.substring(0, 20) + '...')
+      editor.loadFromUrlParameter(encodedDbml)
+    }
+  }
+
+  onMounted(() => {
+    // Use nextTick to ensure stores are fully initialized
+    nextTick(() => {
+      loadFromUrl()
+    })
   })
+
+  // Watch for URL changes to reload parameters
+  watch(() => [route.params.encodedDbml, route.query.editor], () => {
+    loadFromUrl()
+  }, { immediate: false })
 </script>
 
 <style scoped>
