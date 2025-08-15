@@ -51,7 +51,10 @@
   onMounted(() => {
     const encodedDbml = route.params.encodedDbml
     if (encodedDbml) {
-      editor.loadFromUrlParameter(encodedDbml)
+      // Use nextTick to ensure stores are fully initialized
+      nextTick(() => {
+        editor.loadFromUrlParameter(encodedDbml)
+      })
     }
   })
 </script>

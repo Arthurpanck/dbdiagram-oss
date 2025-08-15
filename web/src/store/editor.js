@@ -230,11 +230,16 @@ export const useEditorStore = defineStore("editor", {
     loadFromUrlParameter(encodedDbml) {
       if (!encodedDbml) return;
       
+      console.log('Loading DBML from URL parameter:', encodedDbml.substring(0, 20) + '...');
+      
       try {
         const dbmlText = decodeDbmlFromUrl(encodedDbml);
         if (dbmlText) {
+          console.log('Decoded DBML:', dbmlText.substring(0, 50) + '...');
           this.updateSourceText(dbmlText);
           this.updateDatabase();
+        } else {
+          console.warn('Decoded DBML is empty');
         }
       } catch (e) {
         console.error('Failed to load DBML from URL parameter:', e);

@@ -52,12 +52,20 @@ export default ({ store }) => {
   else if(store.$id === "files") {
 
     (() => {
+      // Check if we have URL parameter - if so, skip auto-loading
+      const hasUrlParameter = window.location.hash.includes('/editor/') && 
+                             window.location.hash.split('/editor/')[1];
+      
       const currentFile = load("currentFile") || 'Untitled';
       store.$patch({
         currentFile: currentFile
       });
       store.loadFileList();
-      store.loadFile(currentFile);
+      
+      // Only auto-load if no URL parameter present
+      if (!hasUrlParameter) {
+        store.loadFile(currentFile);
+      }
     })();
 
     store.$subscribe((mutation, state) => {
