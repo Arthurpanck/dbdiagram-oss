@@ -51,7 +51,9 @@ function analyzeDOMStructure() {
     children.forEach(el => {
       const tag = el.tagName.toLowerCase();
       const classes = el.className || '';
-      const key = `${tag}${classes ? '.' + classes.split(' ').slice(0, 2).join('.') : ''}`;
+      // Fix: vérifier que className est une string avant split
+      const classStr = typeof classes === 'string' ? classes : '';
+      const key = `${tag}${classStr ? '.' + classStr.split(' ').slice(0, 2).join('.') : ''}`;
       elementTypes[key] = (elementTypes[key] || 0) + 1;
     });
     
@@ -151,11 +153,12 @@ function isTableColumn(element) {
   
   const text = element.textContent?.trim() || '';
   const className = element.className || '';
+  const classStr = typeof className === 'string' ? className : '';
   const tagName = element.tagName.toLowerCase();
   
   // Critères pour identifier une colonne
   const hasTableText = text.length > 0 && text.length < 100;
-  const hasTableClass = className.includes('column') || className.includes('field') || className.includes('cell');
+  const hasTableClass = classStr.includes('column') || classStr.includes('field') || classStr.includes('cell');
   const isTextElement = tagName === 'text' || tagName === 'span' || tagName === 'div';
   const isInDiagram = element.closest('.db-graph-view, .joint-paper, .diagram-container');
   
@@ -164,9 +167,12 @@ function isTableColumn(element) {
 
 // Fonction pour obtenir des infos sur un élément
 function getElementInfo(element) {
+  const className = element.className || '';
+  const classStr = typeof className === 'string' ? className : '';
+  
   return {
     tag: element.tagName,
-    class: element.className,
+    class: classStr,
     text: element.textContent?.substring(0, 50),
     id: element.id,
     parent: element.parentElement?.tagName
