@@ -54,7 +54,23 @@ function handleUrlParameter() {
   console.log('🔍 Checking URL for parameters...');
   const hash = window.location.hash;
   
-  // Nettoyer l'éditeur d'abord
+  // ÉTAPE 1: ACE Editor clearing qui fonctionnait
+  if (window.ace) {
+    console.log('ACE API found, clearing editor');
+    const aceEditorElement = document.querySelector('.ace_editor');
+    if (aceEditorElement) {
+      try {
+        const editor = window.ace.edit(aceEditorElement);
+        editor.setValue('', -1);
+        editor.clearSelection();
+        console.log('✅ ACE Editor cleared via API');
+      } catch (e) {
+        console.log('⚠️ ACE API clear failed:', e);
+      }
+    }
+  }
+  
+  // ÉTAPE 2: Nettoyer les textareas aussi
   const textareas = document.querySelectorAll('textarea');
   textareas.forEach(textarea => {
     textarea.value = '';
