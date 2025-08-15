@@ -47,14 +47,17 @@ export const encodeDbmlForUrl = (dbmlText) => {
 
 export const decodeDbmlFromUrl = (encodedDbml) => {
   try {
-    const base64 = encodedDbml
+    let base64 = encodedDbml
       .replace(/-/g, '+')
       .replace(/_/g, '/');
     
-    const padding = 4 - (base64.length % 4);
-    const paddedBase64 = padding !== 4 ? base64 + '='.repeat(padding) : base64;
+    // Add padding if needed
+    const padLength = (4 - (base64.length % 4)) % 4;
+    if (padLength > 0) {
+      base64 += '='.repeat(padLength);
+    }
     
-    return atob(paddedBase64);
+    return atob(base64);
   } catch (e) {
     console.error('Failed to decode DBML from URL:', e);
     return '';
