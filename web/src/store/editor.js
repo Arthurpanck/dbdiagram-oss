@@ -235,24 +235,36 @@ export const useEditorStore = defineStore("editor", {
         return;
       }
       
-      console.log('Loading DBML from URL parameter:', encodedDbml.substring(0, 20) + '...', 'Length:', encodedDbml.length);
+      console.log('=== URL Parameter Loading Debug ===');
+      console.log('1. Input parameter:', encodedDbml.substring(0, 50) + '...', 'Length:', encodedDbml.length);
+      console.log('2. Current source text before:', this.source.text.substring(0, 50) + '...');
       
       try {
         const dbmlText = decodeDbmlFromUrl(encodedDbml);
-        console.log('Decode result:', dbmlText ? 'Success' : 'Empty', 'Length:', dbmlText?.length);
+        console.log('3. Decode result:', dbmlText ? 'Success' : 'Empty', 'Length:', dbmlText?.length);
         
         if (dbmlText && dbmlText.trim()) {
-          console.log('Decoded DBML:', dbmlText.substring(0, 100) + '...');
-          console.log('Setting source text...');
-          this.updateSourceText(dbmlText);
-          console.log('Updating database...');
+          console.log('4. Decoded DBML preview:', dbmlText.substring(0, 100) + '...');
+          console.log('5. Setting source text...');
+          
+          // Force update the state directly to ensure reactivity
+          this.$patch({
+            source: {
+              ...this.source,
+              text: dbmlText
+            }
+          });
+          
+          console.log('6. Source text after update:', this.source.text.substring(0, 50) + '...');
+          console.log('7. Updating database...');
           this.updateDatabase();
-          console.log('URL parameter loading complete');
+          console.log('8. URL parameter loading complete. Database schema count:', this.database.schemas?.[0]?.tables?.length || 0);
         } else {
-          console.warn('Decoded DBML is empty or whitespace only');
+          console.warn('Decoded DBML is empty or whitespace only. Raw decode result:', JSON.stringify(dbmlText));
         }
       } catch (e) {
         console.error('Failed to load DBML from URL parameter:', e);
+        console.error('Stack trace:', e.stack);
       }
     }
   }

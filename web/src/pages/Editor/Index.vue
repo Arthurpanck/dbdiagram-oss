@@ -50,6 +50,10 @@
 
   // Function to load DBML from URL parameters
   const loadFromUrl = () => {
+    console.log('=== loadFromUrl called ===')
+    console.log('Route params:', route.params)
+    console.log('Route query:', route.query)
+    
     // Check for route params first (existing behavior)
     let encodedDbml = route.params.encodedDbml
     
@@ -58,21 +62,44 @@
       encodedDbml = route.query.editor
     }
     
+    console.log('Final encodedDbml:', encodedDbml ? encodedDbml.substring(0, 30) + '...' : 'null')
+    
     if (encodedDbml) {
       console.log('Loading DBML from URL...', encodedDbml.substring(0, 20) + '...')
       editor.loadFromUrlParameter(encodedDbml)
+    } else {
+      console.log('No DBML parameter found in URL')
     }
   }
 
   onMounted(() => {
-    // Use nextTick to ensure stores are fully initialized
+    console.log('=== Editor mounted ===')
+    console.log('Initial route:', route.fullPath)
+    
+    // Multiple attempts to ensure loading works
     nextTick(() => {
+      console.log('=== First attempt (nextTick) ===')
       loadFromUrl()
     })
+    
+    // Backup attempt after a short delay
+    setTimeout(() => {
+      console.log('=== Backup attempt (setTimeout 100ms) ===')
+      loadFromUrl()
+    }, 100)
+    
+    // Final attempt after longer delay
+    setTimeout(() => {
+      console.log('=== Final attempt (setTimeout 500ms) ===')
+      loadFromUrl()
+    }, 500)
   })
 
   // Watch for URL changes to reload parameters
-  watch(() => [route.params.encodedDbml, route.query.editor], () => {
+  watch(() => [route.params.encodedDbml, route.query.editor], (newVal, oldVal) => {
+    console.log('=== Route watcher triggered ===')
+    console.log('New values:', newVal)
+    console.log('Old values:', oldVal)
     loadFromUrl()
   }, { immediate: false })
 </script>
