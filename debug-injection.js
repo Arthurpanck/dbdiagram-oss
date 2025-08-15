@@ -44,16 +44,17 @@ function handleUrlParameter() {
   console.log('🔍 Checking URL for parameters...');
   const hash = window.location.hash;
   
-  // Nettoyer l'éditeur d'abord
+  // Créer 1000 lignes vides par défaut
+  const emptyLines = '\n'.repeat(1000);
   const textareas = document.querySelectorAll('textarea');
   textareas.forEach(textarea => {
-    textarea.value = '';
+    textarea.value = emptyLines;
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
-  // Si pas de paramètre, on s'arrête là
+  // Si pas de paramètre, on garde les 1000 lignes vides
   if (!hash.includes('/editor/')) {
-    console.log('✅ No URL parameter - editor stays empty');
+    console.log('✅ No URL parameter - editor loaded with 1000 empty lines');
     window.DBML_INJECTED = true;
     return;
   }
