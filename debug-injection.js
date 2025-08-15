@@ -98,26 +98,30 @@ function handleUrlParameter() {
           if (padLength > 0) base64 += '='.repeat(padLength);
           const dbmlText = atob(base64);
           
-          console.log('Injecting DBML:', dbmlText.substring(0, 50) + '...');
+          console.log('Injecting DBML into ACE Editor:', dbmlText.substring(0, 50) + '...');
           
-          // Via ACE API
-          if (window.ace && aceEditorElement) {
-            try {
-              const editor = window.ace.edit(aceEditorElement);
-              editor.setValue(dbmlText, -1);
-              editor.clearSelection();
-              console.log('✅ DBML injected via ACE API');
-            } catch (e) {
-              console.log('⚠️ ACE API injection failed:', e);
+          // Méthode 1: Via ACE API (comme dans le commit qui fonctionnait)
+          if (window.ace) {
+            const aceEditorElement2 = document.querySelector('.ace_editor');
+            if (aceEditorElement2) {
+              try {
+                const editor = window.ace.edit(aceEditorElement2);
+                editor.setValue(dbmlText, -1);
+                editor.clearSelection();
+                console.log('✅ DBML injected via ACE API');
+              } catch (e) {
+                console.log('⚠️ ACE API injection failed:', e);
+              }
             }
           }
           
-          // Via textarea aussi
+          // Méthode 2: Via textarea aussi
           textareas.forEach(textarea => {
             textarea.value = dbmlText;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
           });
           
+          console.log('✅ DBML loaded in ACE Editor');
         } catch (e) {
           console.error('❌ Failed to decode/inject:', e);
         }
