@@ -209,18 +209,25 @@ function isTableColumn(element) {
   const tagName = element.tagName.toLowerCase();
   const id = element.id || '';
   
-  // Nouveau: Détecter spécifiquement les éléments SVG de tables
+  // NOUVEAU: Détecter spécifiquement les éléments SVG de tables
   const isSVGField = id.startsWith('field-') || element.closest('[id^="field-"]');
   const isInTable = element.closest('[id^="table-"]') || element.closest('.db-table-field');
   const hasDbTableClass = element.classList?.contains('db-table-field') || 
                           element.closest('g')?.classList?.contains('db-table-field');
   
-  // Critères pour identifier une colonne
-  const hasTableText = text.length > 0 && text.length < 100;
-  const isTextElement = tagName === 'text' || tagName === 'span' || tagName === 'div' || tagName === 'g';
+  // IMPORTANT: Inclure les éléments rect SVG dans les fields
+  const isSVGElement = tagName === 'rect' || tagName === 'text' || tagName === 'g' || tagName === 'span' || tagName === 'div';
   const isInDiagram = element.closest('.db-graph-view, .joint-paper, .diagram-container');
   
-  return (hasTableText && (isSVGField || hasDbTableClass || isInTable || isTextElement)) && isInDiagram;
+  // Pour les rect SVG, moins strict sur le texte
+  if (tagName === 'rect' && (isSVGField || isInTable)) {
+    console.log('✅ Detected SVG rect in table field:', id);
+    return isInDiagram;
+  }
+  
+  // Pour les autres éléments, garde la logique originale
+  const hasTableText = text.length > 0 && text.length < 100;
+  return (hasTableText && (isSVGField || hasDbTableClass || isInTable || isSVGElement)) && isInDiagram;
 }
 
 // Fonction pour obtenir des infos sur un élément
@@ -283,7 +290,20 @@ function createRelation(sourceElement, targetElement) {
 
 // Fonction pour extraire le nom de table et colonne
 function extractTableColumnInfo(element) {
-  const text = element.textContent?.trim() || '';
+  let text = element.textContent?.trim() || '';
+  
+  // NOUVEAU: Pour les éléments rect, chercher le texte dans les éléments siblings
+  if (element.tagName.toLowerCase() === 'rect' && !text) {
+    // Chercher le texte dans le field parent ou siblings
+    const fieldParent = element.closest('[id^="field-"]') || element.parentElement;
+    if (fieldParent) {
+      const textElement = fieldParent.querySelector('text');
+      if (textElement) {
+        text = textElement.textContent?.trim() || '';
+        console.log('📝 Found text for rect:', text);
+      }
+    }
+  }
   
   // Méthode 1: Chercher dans les IDs et structure SVG
   let tableElement = element;
@@ -300,6 +320,7 @@ function extractTableColumnInfo(element) {
       const headerElement = tableElement.querySelector('.db-table-header text, g.db-table-header text');
       if (headerElement) {
         tableName = headerElement.textContent?.trim();
+        console.log('🏷️ Found table name:', tableName);
         break;
       }
     }
@@ -313,13 +334,17 @@ function extractTableColumnInfo(element) {
   }
   
   // Méthode 2: Extraire depuis les IDs field-X
-  if (!tableName && element.id?.startsWith('field-')) {
-    // Si c'est un field, chercher la table parente
-    const tableParent = element.closest('[id^="table-"]');
-    if (tableParent) {
-      const headerElement = tableParent.querySelector('.db-table-header text, g.db-table-header text');
-      if (headerElement) {
-        tableName = headerElement.textContent?.trim();
+  if (!tableName) {
+    const fieldElement = element.closest('[id^="field-"]') || element;
+    if (fieldElement.id?.startsWith('field-')) {
+      // Si c'est un field, chercher la table parente
+      const tableParent = fieldElement.closest('[id^="table-"]');
+      if (tableParent) {
+        const headerElement = tableParent.querySelector('.db-table-header text, g.db-table-header text');
+        if (headerElement) {
+          tableName = headerElement.textContent?.trim();
+          console.log('🏷️ Found table name from field:', tableName);
+        }
       }
     }
   }
@@ -327,6 +352,14 @@ function extractTableColumnInfo(element) {
   // Méthode 3: Pattern par défaut si pas trouvé
   if (!tableName) {
     tableName = `table_${Math.random().toString(36).substr(2, 5)}`;
+    console.log('🎲 Generated random table name:', tableName);
+  }
+  
+  // Si pas de texte, utiliser l'ID du field
+  if (!text) {
+    const fieldId = element.id || element.closest('[id^="field-"]')?.id || '';
+    text = fieldId.replace('field-', 'column_') || 'column';
+    console.log('🔤 Generated column name from ID:', text);
   }
   
   return {
