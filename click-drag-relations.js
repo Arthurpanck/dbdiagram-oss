@@ -102,57 +102,97 @@ function addDragDropListeners() {
 // Gestionnaire pour mousedown global
 function handleMouseDown(e) {
   const element = e.target;
-  console.log('🖱️ Mouse down on:', element.tagName, element.className, element.textContent?.substring(0, 30));
+  console.log('🖱️ Mouse down on:', element.tagName, element.id, element.textContent?.substring(0, 30));
   
   // Vérifier si c'est un élément de table/colonne
   if (isTableColumn(element)) {
     window.DRAG_SOURCE = element;
     console.log('🎯 Drag source set:', getElementInfo(element));
     
-    // Empêcher la sélection de texte
+    // Empêcher la sélection de texte et autres comportements par défaut
     e.preventDefault();
+    e.stopPropagation();
     
-    // Ajouter une classe visuelle
-    element.classList.add('drag-source');
-    element.style.backgroundColor = 'rgba(0, 123, 255, 0.3)';
+    // Ajouter une classe visuelle + style direct pour SVG
+    try {
+      element.classList.add('drag-source');
+    } catch (e) {
+      // Fallback pour SVG qui n'a pas classList
+    }
+    
+    // Style direct qui marche pour SVG et HTML
+    element.setAttribute('data-dragging', 'source');
+    if (element.style) {
+      element.style.fill = 'rgba(0, 123, 255, 0.5)';
+      element.style.backgroundColor = 'rgba(0, 123, 255, 0.3)';
+    }
+    
+    console.log('✅ Visual feedback applied to drag source');
+  } else {
+    console.log('❌ Element not recognized as table column');
   }
 }
 
 // Gestionnaire pour mousemove global
 function handleMouseMove(e) {
   if (window.DRAG_SOURCE) {
+    console.log('🔄 Dragging in progress...');
+    
+    // Nettoyer les anciens highlights
+    document.querySelectorAll('[data-dragging="target"]').forEach(el => {
+      el.removeAttribute('data-dragging');
+      if (el.style) {
+        el.style.fill = '';
+        el.style.backgroundColor = '';
+      }
+    });
+    
     // Optionnel: ajouter un indicateur visuel pendant le drag
     const element = document.elementFromPoint(e.clientX, e.clientY);
     
-    // Nettoyer les anciens highlights
-    document.querySelectorAll('.drag-target').forEach(el => {
-      el.classList.remove('drag-target');
-      el.style.backgroundColor = '';
-    });
-    
     // Highlight le target potentiel
     if (element && isTableColumn(element) && element !== window.DRAG_SOURCE) {
-      element.classList.add('drag-target');
-      element.style.backgroundColor = 'rgba(40, 167, 69, 0.3)';
+      console.log('🎯 Hovering over potential target:', element.id);
+      element.setAttribute('data-dragging', 'target');
+      if (element.style) {
+        element.style.fill = 'rgba(40, 167, 69, 0.5)';
+        element.style.backgroundColor = 'rgba(40, 167, 69, 0.3)';
+      }
     }
   }
 }
 
 // Gestionnaire pour mouseup global
 function handleMouseUp(e) {
+  console.log('🖱️ Mouse up detected');
+  
   if (window.DRAG_SOURCE) {
+    console.log('📍 Drag source exists, checking target...');
+    
     const target = document.elementFromPoint(e.clientX, e.clientY);
+    console.log('🎯 Target element:', target?.tagName, target?.id, target?.textContent?.substring(0, 30));
     
     if (target && isTableColumn(target) && target !== window.DRAG_SOURCE) {
       window.DRAG_TARGET = target;
-      console.log('🎯 Drag target set:', getElementInfo(target));
+      console.log('✅ Valid drag target found:', getElementInfo(target));
       
       // Créer la relation
       createRelation(window.DRAG_SOURCE, window.DRAG_TARGET);
+    } else {
+      console.log('❌ No valid target found or same as source');
+      if (target === window.DRAG_SOURCE) {
+        console.log('   → Target is same as source');
+      } else if (!target) {
+        console.log('   → No target element found');
+      } else if (!isTableColumn(target)) {
+        console.log('   → Target is not a table column');
+      }
     }
     
     // Nettoyer
     cleanupDragState();
+  } else {
+    console.log('❌ No drag source found');
   }
 }
 
@@ -330,15 +370,35 @@ function injectDBMLCode(dbmlCode) {
 
 // Fonction pour nettoyer l'état du drag
 function cleanupDragState() {
+  console.log('🧹 Cleaning up drag state...');
+  
   // Nettoyer les éléments visuels
+  document.querySelectorAll('[data-dragging]').forEach(el => {
+    el.removeAttribute('data-dragging');
+    if (el.style) {
+      el.style.fill = '';
+      el.style.backgroundColor = '';
+    }
+  });
+  
+  // Nettoyer les classes aussi
   document.querySelectorAll('.drag-source, .drag-target').forEach(el => {
-    el.classList.remove('drag-source', 'drag-target');
-    el.style.backgroundColor = '';
+    try {
+      el.classList.remove('drag-source', 'drag-target');
+    } catch (e) {
+      // Ignore si pas de classList
+    }
+    if (el.style) {
+      el.style.backgroundColor = '';
+      el.style.fill = '';
+    }
   });
   
   // Reset les variables
   window.DRAG_SOURCE = null;
   window.DRAG_TARGET = null;
+  
+  console.log('✅ Drag state cleaned');
 }
 
 // Fonction pour afficher une notification
