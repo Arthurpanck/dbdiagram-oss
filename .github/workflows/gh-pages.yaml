@@ -1,0 +1,45 @@
+name: Deploy to Github Pages
+on:
+  push:
+    branches:
+      - master
+      - gh-pages2
+      
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  gh-pages-deploy:
+    name: Deploying to Github Pages
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-node@v4
+          with:
+            node-version: '18'
+            cache: 'yarn'
+            cache-dependency-path: '**/yarn.lock'
+
+        - name: Install packages
+          working-directory: web
+          shell: bash
+          run: yarn install --frozen-lockfile
+
+        - name: Build Vue app
+          working-directory: web
+          shell: bash
+          run: yarn build
+
+        - name: Setup Pages
+          uses: actions/configure-pages@v3
+          
+        - name: Upload artifact
+          uses: actions/upload-pages-artifact@v2
+          with:
+            path: ./web/dist/spa
+            
+        - name: Deploy to GitHub Pages
+          id: deployment
+          uses: actions/deploy-pages@v2
