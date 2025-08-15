@@ -31,31 +31,53 @@ for (let i = localStorage.length - 1; i >= 0; i--) {
   }
 }
 
-// Variable globale pour éviter les injections multiples
-window.DBML_INJECTED = false;
+// Variables globales pour éviter les injections multiples
+window.DBML_FIRST_INJECTION = false;
+window.DBML_SECOND_INJECTION = false;
 
-// Fonction simple et propre
-function handleUrlParameter() {
-  if (window.DBML_INJECTED) {
-    console.log('⏭️ Already processed, skipping');
+// PREMIÈRE INJECTION : 1000 lignes vides pour empêcher l'autosave
+function firstInjection() {
+  if (window.DBML_FIRST_INJECTION) {
+    console.log('⏭️ First injection already done, skipping');
     return;
   }
 
-  console.log('🔍 Checking URL for parameters...');
-  const hash = window.location.hash;
-  
-  // Créer 1000 lignes vides par défaut
+  console.log('🔄 FIRST INJECTION: Loading 1000 empty lines...');
   const emptyLines = '\n'.repeat(1000);
   const textareas = document.querySelectorAll('textarea');
+  
   textareas.forEach(textarea => {
     textarea.value = emptyLines;
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
+  
+  console.log('✅ First injection complete - 1000 empty lines loaded');
+  window.DBML_FIRST_INJECTION = true;
+  
+  // Lancer la seconde injection après un délai
+  setTimeout(secondInjection, 1000);
+}
 
-  // Si pas de paramètre, on garde les 1000 lignes vides
+// SECONDE INJECTION : Paramètres URL ou nettoyage final
+function secondInjection() {
+  if (window.DBML_SECOND_INJECTION) {
+    console.log('⏭️ Second injection already done, skipping');
+    return;
+  }
+
+  console.log('🔄 SECOND INJECTION: Processing URL parameters...');
+  const hash = window.location.hash;
+  const textareas = document.querySelectorAll('textarea');
+
+  // Si pas de paramètre, vider complètement
   if (!hash.includes('/editor/')) {
-    console.log('✅ No URL parameter - editor loaded with 1000 empty lines');
-    window.DBML_INJECTED = true;
+    console.log('No URL parameter - clearing to empty editor');
+    textareas.forEach(textarea => {
+      textarea.value = '';
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    console.log('✅ Second injection complete - editor cleared');
+    window.DBML_SECOND_INJECTION = true;
     return;
   }
 
@@ -71,14 +93,14 @@ function handleUrlParameter() {
         if (padLength > 0) base64 += '='.repeat(padLength);
         const dbmlText = atob(base64);
         
-        // Injecter UNE SEULE FOIS
+        // Injecter le contenu DBML
         if (textareas.length > 0) {
           textareas[0].value = dbmlText;
           textareas[0].dispatchEvent(new Event('input', { bubbles: true }));
-          console.log('✅ DBML injected successfully');
+          console.log('✅ Second injection complete - DBML content loaded');
         }
         
-        window.DBML_INJECTED = true;
+        window.DBML_SECOND_INJECTION = true;
       } catch (e) {
         console.error('❌ Failed to decode/inject:', e);
       }
@@ -86,5 +108,5 @@ function handleUrlParameter() {
   }
 }
 
-// Lancer une seule fois quand l'app est prête
-setTimeout(handleUrlParameter, 2000);
+// Lancer le processus en deux étapes
+setTimeout(firstInjection, 2000);
