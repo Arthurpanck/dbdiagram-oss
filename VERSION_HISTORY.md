@@ -1,5 +1,39 @@
 # Version History - DBDiagram OSS
 
+## v1.1.0-working-ace-clearing (2025-08-15)
+
+### ✅ **Version finale avec ACE clearing + injection fonctionnels**
+
+**État : FONCTIONNEL - OPTIMAL**
+- ✅ ACE Editor clearing via API (`editor.setValue('', -1)`)
+- ✅ Injection URL via textarea (méthode simple et fiable)
+- ✅ localStorage blocking pour éviter la persistance
+- ✅ Une seule injection, pas de duplications
+
+### 🎯 **Ce qui fonctionne parfaitement**
+- **Clearing** : `window.ace.edit().setValue('', -1)` vide complètement l'éditeur
+- **Injection** : `textarea.value = dbmlText` + événement input charge le contenu
+- **Processus** : Clear → Inject en une seule opération
+
+### 🔧 **Architecture finale simple**
+```javascript
+// 1. Clear avec ACE API
+const editor = window.ace.edit(aceElement);
+editor.setValue('', -1);
+
+// 2. Inject via textarea
+textarea.value = dbmlContent;
+textarea.dispatchEvent(new Event('input'));
+```
+
+### 📊 **Leçons apprises**
+- La simplicité l'emporte sur la complexité
+- ACE API clearing est la seule méthode qui marche
+- Textarea injection est plus fiable que ACE API injection
+- localStorage blocking élimine les conflits
+
+---
+
 ## v1.0.0-working-url-params (2025-08-15)
 
 ### ✅ **Première version fonctionnelle avec chargement des paramètres URL**
