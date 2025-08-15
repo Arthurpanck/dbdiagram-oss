@@ -54,35 +54,9 @@ function handleUrlParameter() {
   console.log('🔍 Checking URL for parameters...');
   const hash = window.location.hash;
   
-  // ÉTAPE 1: CLEARING ACE EDITOR - Méthode qui FONCTIONNAIT du commit a0f00aac
-  console.log('🎯 CLEARING ACE EDITOR: Removing all .ace_line elements...');
-  
-  // Méthode 1: Supprimer toutes les lignes ACE
-  const aceLines = document.querySelectorAll('.ace_line');
-  console.log(`Found ${aceLines.length} ace_line elements`);
-  
-  aceLines.forEach((line, index) => {
-    line.remove();
-    if (index < 5) console.log(`Removed ace_line ${index}:`, line.textContent?.substring(0, 50));
-  });
-  
-  // Méthode 2: Vider le contenu ACE
-  const aceContent = document.querySelector('.ace_content');
-  if (aceContent) {
-    console.log('Found .ace_content, clearing innerHTML');
-    aceContent.innerHTML = '';
-  }
-  
-  // Méthode 3: Vider le scroller ACE 
-  const aceScroller = document.querySelector('.ace_scroller');
-  if (aceScroller) {
-    console.log('Found .ace_scroller, clearing innerHTML');
-    aceScroller.innerHTML = '';
-  }
-  
-  // Méthode 4: Si ACE Editor API est disponible
+  // ÉTAPE 1: ACE Editor clearing - SEULEMENT ACE API
   if (window.ace) {
-    console.log('ACE API found, trying to clear editor');
+    console.log('🎯 ACE API found, clearing editor');
     const aceEditorElement = document.querySelector('.ace_editor');
     if (aceEditorElement) {
       try {
